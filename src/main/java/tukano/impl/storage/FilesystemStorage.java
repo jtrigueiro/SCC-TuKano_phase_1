@@ -8,42 +8,63 @@ import static tukano.api.Result.ErrorCode.CONFLICT;
 import static tukano.api.Result.ErrorCode.INTERNAL_ERROR;
 import static tukano.api.Result.ErrorCode.NOT_FOUND;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import com.azure.core.util.BinaryData;
+import com.azure.storage.blob.BlobClient;
+import com.azure.storage.blob.BlobContainerClient;
+import com.azure.storage.blob.BlobContainerClientBuilder;
+
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.function.Consumer;
 
 import tukano.api.Result;
 import utils.Hash;
-import utils.IO;
 
 public class FilesystemStorage implements BlobStorage {
-	private final String rootDir;
-	private static final int CHUNK_SIZE = 4096;
-	private static final String DEFAULT_ROOT_DIR = "/tmp/";
+	private static final String BLOBS_CONTAINER_NAME = "shorts";
+
+	private BlobContainerClient containerClient;
 
 	public FilesystemStorage() {
-		this.rootDir = DEFAULT_ROOT_DIR;
+		// Get connection string in the storage access keys page
+		String storageConnectionString = "use your own from the portal...";
+
+		try {
+			// Get container client
+			containerClient = new BlobContainerClientBuilder()
+				.connectionString(storageConnectionString)
+				.containerName(BLOBS_CONTAINER_NAME)
+				.buildClient();
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 	
 	@Override
 	public Result<Void> write(String path, byte[] bytes) {
 		if (path == null)
-			return error(BAD_REQUEST);
+            return error(BAD_REQUEST);
+		
+		try {
+			// Get client to blob
+			BlobClient blob = containerClient.getBlobClient(path);
 
-		var file = toFile( path );
+			// Check if blob exists and has the same content
+			if (blob.exists()) {
+				if (Arrays.equals(Hash.sha256(bytes), Hash.sha256(blob.downloadContent().toBytes())))
+					return ok();
+				else
+					return error(CONFLICT);
+			}
 
-		if (file.exists()) {
-			if (Arrays.equals(Hash.sha256(bytes), Hash.sha256(IO.read(file))))
-				return ok();
-			else
-				return error(CONFLICT);
-
+			// Upload contents from BinaryData
+			blob.upload(BinaryData.fromBytes(bytes));
 		}
-		IO.write(file, bytes);
+		catch (Exception e) {
+			e.printStackTrace();
+			return error(INTERNAL_ERROR);
+		}
+
 		return ok();
 	}
 
@@ -51,25 +72,44 @@ public class FilesystemStorage implements BlobStorage {
 	public Result<byte[]> read(String path) {
 		if (path == null)
 			return error(BAD_REQUEST);
-		
-		var file = toFile( path );
-		if( ! file.exists() )
-			return error(NOT_FOUND);
-		
-		var bytes = IO.read(file);
-		return bytes != null ? ok( bytes ) : error( INTERNAL_ERROR );
+
+		try {
+			// Get client to blob
+			BlobClient blob = containerClient.getBlobClient(path);
+
+			// Check if blob exists
+			if (!blob.exists())
+				return error(NOT_FOUND);
+			
+			return ok(blob.downloadContent().toBytes());
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+			return error(INTERNAL_ERROR);
+		}
 	}
 
 	@Override
 	public Result<Void> read(String path, Consumer<byte[]> sink) {
 		if (path == null)
 			return error(BAD_REQUEST);
-		
-		var file = toFile( path );
-		if( ! file.exists() )
-			return error(NOT_FOUND);
-		
-		IO.read( file, CHUNK_SIZE, sink );
+
+		try {
+			// Get client to blob
+			BlobClient blob = containerClient.getBlobClient(path);
+
+			// Check if blob exists
+			if (!blob.exists())
+				return error(NOT_FOUND);
+
+			// Download contents to sink
+			sink.accept(blob.downloadContent().toBytes());
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+			return error(INTERNAL_ERROR);
+		}
+
 		return ok();
 	}
 	
@@ -79,27 +119,22 @@ public class FilesystemStorage implements BlobStorage {
 			return error(BAD_REQUEST);
 
 		try {
-			var file = toFile( path );
-			Files.walk(file.toPath())
-			.sorted(Comparator.reverseOrder())
-			.map(Path::toFile)
-			.forEach(File::delete);
-		} catch (IOException e) {
+			// Get client to blob
+			BlobClient blob = containerClient.getBlobClient(path);
+
+			// Check if blob exists
+			if (!blob.exists())
+				return error(NOT_FOUND);
+
+			// Delete blob
+			blob.delete();
+		}
+		catch (Exception e) {
 			e.printStackTrace();
 			return error(INTERNAL_ERROR);
 		}
+
 		return ok();
 	}
-	
-	private File toFile(String path) {
-		var res = new File( rootDir + path );
-		
-		var parent = res.getParentFile();
-		if( ! parent.exists() )
-			parent.mkdirs();
-		
-		return res;
-	}
-
 	
 }
