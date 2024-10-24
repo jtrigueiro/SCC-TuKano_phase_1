@@ -81,6 +81,13 @@ public class CosmosDBLayer {
 		return tryCatch(() -> container.createItem(obj).getItem());
 	}
 
+	public <T> Result<?> deleteMany(String queryStr, Class<T> clazz) {
+		return tryCatch(() -> container.queryItems(queryStr, new CosmosQueryRequestOptions(), clazz)
+				.stream()
+				.map(item -> container.deleteItem(item, new CosmosItemRequestOptions()).getItem())
+				.toList());
+	}
+
 	public <T> Result<List<T>> query(String queryStr, Class<T> clazz) {
 		return tryCatch(() -> {
 			var res = container.queryItems(queryStr, new CosmosQueryRequestOptions(), clazz);
