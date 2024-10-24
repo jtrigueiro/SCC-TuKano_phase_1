@@ -81,7 +81,7 @@ public class CosmosDBLayer {
 		return tryCatch(() -> container.createItem(obj).getItem());
 	}
 
-	public <T> Result<List<T>> query(Class<T> clazz, String queryStr) {
+	public <T> Result<List<T>> query(String queryStr, Class<T> clazz) {
 		return tryCatch(() -> {
 			var res = container.queryItems(queryStr, new CosmosQueryRequestOptions(), clazz);
 			return res.stream().toList();
