@@ -12,10 +12,13 @@ import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
+import redis.clients.jedis.Jedis;
 import tukano.api.Result;
 import tukano.api.User;
 import tukano.api.Users;
+import tukano.impl.cache.RedisCache;
 import tukano.impl.storage.CosmosDBLayer;
+import utils.JSON;
 
 public class JavaUsers implements Users {
 	
@@ -47,8 +50,19 @@ public class JavaUsers implements Users {
 
 		if (userId == null)
 			return error(BAD_REQUEST);
+
+		try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+			var cached = jedis.get(Users.NAME + ':' + userId);
+			if (cached != null)
+				return ok(JSON.decode(cached, User.class));
+
+		var result = validatedUserOrError( CosmosDBLayer.getInstance(Users.NAME).getOne( userId, User.class), pwd);
+
+		if( result.isOK())
+			jedis.set(Users.NAME + ':' + userId, JSON.encode(result.value()));
 		
-		return validatedUserOrError( CosmosDBLayer.getInstance(Users.NAME).getOne( userId, User.class), pwd);
+		return result;
+		}
 	}
 
 	@Override
