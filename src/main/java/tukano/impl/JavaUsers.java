@@ -7,6 +7,7 @@ import static tukano.api.Result.errorOrValue;
 import static tukano.api.Result.ok;
 import static tukano.api.Result.ErrorCode.BAD_REQUEST;
 import static tukano.api.Result.ErrorCode.FORBIDDEN;
+import static tukano.api.Result.ErrorCode.INTERNAL_ERROR;
 
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -41,7 +42,16 @@ public class JavaUsers implements Users {
 		if( badUserInfo( user ) )
 				return error(BAD_REQUEST);
 
-		return errorOrValue( CosmosDBLayer.getInstance(Users.NAME).insertOne( user), user.getUserId() );
+		var result = errorOrValue( CosmosDBLayer.getInstance(Users.NAME).insertOne( user), user.getUserId() );
+
+		if( result.isOK())
+			try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+				jedis.set(Users.NAME + ':' + user.getUserId(), JSON.encode(user));
+			} catch (Exception e) {
+				return error(INTERNAL_ERROR);
+			}
+
+		return result;
 	}
 
 	@Override
@@ -54,7 +64,7 @@ public class JavaUsers implements Users {
 		try (Jedis jedis = RedisCache.getCachePool().getResource()) {
 			var cached = jedis.get(Users.NAME + ':' + userId);
 			if (cached != null)
-				return ok(JSON.decode(cached, User.class));
+				return validatedUserOrError(Result.ok(JSON.decode(cached, User.class)), pwd);
 
 		var result = validatedUserOrError( CosmosDBLayer.getInstance(Users.NAME).getOne( userId, User.class), pwd);
 
@@ -62,6 +72,8 @@ public class JavaUsers implements Users {
 			jedis.set(Users.NAME + ':' + userId, JSON.encode(result.value()));
 		
 		return result;
+		} catch (Exception e) {
+			return error(INTERNAL_ERROR);
 		}
 	}
 
@@ -73,8 +85,28 @@ public class JavaUsers implements Users {
 			return error(BAD_REQUEST);
 
 		CosmosDBLayer db = CosmosDBLayer.getInstance(Users.NAME);
+		
+		try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+			var cached = jedis.get(Users.NAME + ':' + userId);
+			Result<User> rUser;
 
-		return errorOrResult( validatedUserOrError(db.getOne( userId, User.class), pwd), user -> db.updateOne( user.updateFrom(other)));
+			if (cached != null)
+				rUser = Result.ok(JSON.decode(cached, User.class));
+			else
+				rUser = db.getOne( userId, User.class);
+
+			if (validatedUserOrError(rUser, pwd).isOK()) {
+				User user = rUser.value().updateFrom(other);
+				if(db.updateOne( user.updateFrom(user)).isOK()) {
+					rUser = db.getOne(userId, User.class);
+					if(rUser.isOK())
+						jedis.set(Users.NAME + ':' + userId, JSON.encode(rUser.value()));
+				}
+			}
+			return rUser;
+		} catch (Exception e) {
+			return error(INTERNAL_ERROR);
+		}
 	}
 
 	@Override
