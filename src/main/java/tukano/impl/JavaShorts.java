@@ -13,15 +13,18 @@ import java.util.List;
 import java.util.UUID;
 import java.util.logging.Logger;
 
+import redis.clients.jedis.Jedis;
 import tukano.api.Blobs;
 import tukano.api.Result;
 import tukano.api.Short;
 import tukano.api.Shorts;
 import tukano.api.User;
+import tukano.impl.cache.RedisCache;
 import tukano.impl.data.Following;
 import tukano.impl.data.Likes;
 import tukano.impl.rest.TukanoRestServer;
 import tukano.impl.storage.CosmosDBLayer;
+import utils.JSON;
 
 public class JavaShorts implements Shorts {
 
@@ -59,11 +62,24 @@ public class JavaShorts implements Shorts {
 		if (shortId == null)
 			return error(BAD_REQUEST);
 
-		CosmosDBLayer db = CosmosDBLayer.getInstance(Shorts.NAME);
+		try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+			var cached = jedis.get(Shorts.NAME + ':' + shortId);
 
-		var query = format("SELECT count(*) FROM Likes l WHERE l.shortId = '%s'", shortId);
-		var likes = db.query(query, Long.class).value();
-		return errorOrValue(db.getOne(shortId, Short.class), shrt -> shrt.copyWithLikes_And_Token(likes.get(0)));
+			if (cached != null)
+				return Result.ok(JSON.decode(cached, Short.class));
+
+			CosmosDBLayer db = CosmosDBLayer.getInstance(Shorts.NAME);
+
+			var query = format("SELECT count(*) FROM Likes l WHERE l.shortId = '%s'", shortId);
+			var likes = db.query(query, Long.class).value();
+
+			var result = errorOrValue(db.getOne(shortId, Short.class), shrt -> shrt.copyWithLikes_And_Token(likes.get(0)));
+
+			if (result.isOK())
+				jedis.set(Shorts.NAME + ':' + shortId, JSON.encode(result.value()));
+
+			return result;
+		}
 	}
 
 	@Override
@@ -75,6 +91,10 @@ public class JavaShorts implements Shorts {
 			return errorOrResult(okUser(shrt.getOwnerId(), password), user -> {
 
 					CosmosDBLayer db = CosmosDBLayer.getInstance(Shorts.NAME);
+
+					try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+						jedis.del(Shorts.NAME + ':' + shortId);
+					}
 
 					db.deleteOne(shrt);
 
@@ -178,6 +198,10 @@ public class JavaShorts implements Shorts {
 
 		// delete shorts
 		var query1 = format("SELECT Short s WHERE s.ownerId = '%s'", userId);
+		var shorts = db.query(query1, Short.class).value();
+		try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+			shorts.forEach(shrt -> jedis.del(Shorts.NAME + ':' + shrt.getShortId()));
+		}
 		db.deleteMany(query1, Short.class);
 
 		// delete follows

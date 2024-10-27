@@ -47,10 +47,7 @@ public class JavaUsers implements Users {
 		if( result.isOK())
 			try (Jedis jedis = RedisCache.getCachePool().getResource()) {
 				jedis.set(Users.NAME + ':' + user.getUserId(), JSON.encode(user));
-			} catch (Exception e) {
-				return error(INTERNAL_ERROR);
 			}
-
 		return result;
 	}
 
@@ -72,8 +69,6 @@ public class JavaUsers implements Users {
 			jedis.set(Users.NAME + ':' + userId, JSON.encode(result.value()));
 		
 		return result;
-		} catch (Exception e) {
-			return error(INTERNAL_ERROR);
 		}
 	}
 
@@ -104,8 +99,6 @@ public class JavaUsers implements Users {
 				}
 			}
 			return rUser;
-		} catch (Exception e) {
-			return error(INTERNAL_ERROR);
 		}
 	}
 
@@ -116,19 +109,27 @@ public class JavaUsers implements Users {
 		if (userId == null || pwd == null )
 			return error(BAD_REQUEST);
 
-		CosmosDBLayer db = CosmosDBLayer.getInstance(Users.NAME);
+		try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+			var cached = jedis.get(Users.NAME + ':' + userId);
+			Result<User> rUser;
 
-		return errorOrResult( validatedUserOrError(db.getOne( userId, User.class), pwd), user -> {
+			if (cached != null)
+				rUser = Result.ok(JSON.decode(cached, User.class));
+			else
+				rUser = CosmosDBLayer.getInstance(Users.NAME).getOne(userId, User.class);
 
-			// Delete user shorts and related info asynchronously in a separate thread
-			Executors.defaultThreadFactory().newThread( () -> {
-				JavaShorts.getInstance().deleteAllShorts(userId, pwd, Token.get(userId));
-				JavaBlobs.getInstance().deleteAllBlobs(userId, Token.get(userId));
-			}).start();
-			
-			db.deleteOne(user);
-			return Result.ok(user);
-		});
+			return errorOrResult( validatedUserOrError(rUser, pwd), user -> {
+
+				// Delete user shorts and related info asynchronously in a separate thread
+				Executors.defaultThreadFactory().newThread( () -> {
+					JavaShorts.getInstance().deleteAllShorts(userId, pwd, Token.get(userId));
+					JavaBlobs.getInstance().deleteAllBlobs(userId, Token.get(userId));
+				}).start();
+				
+				CosmosDBLayer.getInstance(Users.NAME).deleteOne(user);
+				return Result.ok(user);
+			});
+		}
 	}
 
 	@Override
