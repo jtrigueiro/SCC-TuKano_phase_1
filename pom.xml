@@ -18,7 +18,7 @@
 				<version>2.1</version>
 					<configuration>
 						<url>http://maven:s3cret@127.0.0.1:8080/manager/text</url>
-						<user>maven</user>
+						<username>maven</username>
 						<password>s3cret</password>
 						<server>tomcat-docker</server>
 						<update>true</update>
