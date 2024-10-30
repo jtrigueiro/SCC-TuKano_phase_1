@@ -57,7 +57,7 @@ public class AzureManagement {
 	static final String AZURE_COSMOSDB_DATABASE = "cosmosdb" + MY_ID; // Cosmos DB database name
 	static final String[] BLOB_CONTAINERS = { "shorts" }; // TODO: Containers to add to the blob storage
 
-	static final Region[] REGIONS = new Region[] { Region.EUROPE_WEST }; // Define the regions to deploy resources here
+	static final Region[] REGIONS = new Region[] { Region.EUROPE_NORTH }; // Define the regions to deploy resources here
 
 	// Name of resource group for each region
 	static final String[] AZURE_RG_REGIONS = Arrays.stream(REGIONS)
@@ -489,7 +489,7 @@ public class AzureManagement {
 
 							// TODO: create the collections you have in your application
 							createCosmosCollection(cosmosClient, AZURE_COSMOSDB_DATABASE, "users", "/id", null);
-
+							createCosmosCollection(cosmosClient, AZURE_COSMOSDB_DATABASE, "shorts", "/id", null);
 							System.err.println("Azure Cosmos DB resources created with success");
 
 						} catch (Exception e) {
