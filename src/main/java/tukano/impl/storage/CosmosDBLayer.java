@@ -21,7 +21,6 @@ public class CosmosDBLayer {
 	private static final String CONNECTION_URL = "https://por preencher"; // TODO
 	private static final String DB_KEY = "por preencher=="; // TODO
 	private static final String DB_NAME = "por preencher"; // TODO
-	// private static final String CONTAINER = "users";
 
 	private static CosmosDBLayer instance;
 

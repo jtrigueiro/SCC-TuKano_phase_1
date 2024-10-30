@@ -26,7 +26,7 @@ public class FilesystemStorage implements BlobStorage {
 
 	public FilesystemStorage() {
 		// Get connection string in the storage access keys page
-		String storageConnectionString = "use your own from the portal...";
+		String storageConnectionString = "";
 
 		try {
 			// Get container client
