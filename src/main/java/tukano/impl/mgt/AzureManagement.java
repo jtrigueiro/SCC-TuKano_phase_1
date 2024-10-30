@@ -51,19 +51,20 @@ public class AzureManagement {
 	static final boolean CREATE_FUNCTIONS = false;
 
 	// TODO: change your suffix and other names if you want
-	static final String MY_ID = "56837_58119"; // Add your suffix here
-	
-	static final String AZURE_COSMOSDB_NAME = "cosmos" + MY_ID;	// Cosmos DB account name
-	static final String AZURE_COSMOSDB_DATABASE = "cosmosdb" + MY_ID;	// Cosmos DB database name
-	static final String[] BLOB_CONTAINERS = { "shorts" };	// TODO: Containers to add to the blob storage
+	static final String MY_ID = "5683758119"; // Add your suffix here
 
-	static final Region[] REGIONS = new Region[] { Region.EUROPE_NORTH}; // Define the regions to deploy resources here
-	
+	static final String AZURE_COSMOSDB_NAME = "cosmos" + MY_ID; // Cosmos DB account name
+	static final String AZURE_COSMOSDB_DATABASE = "cosmosdb" + MY_ID; // Cosmos DB database name
+	static final String[] BLOB_CONTAINERS = { "shorts" }; // TODO: Containers to add to the blob storage
+
+	static final Region[] REGIONS = new Region[] { Region.EUROPE_NORTH }; // Define the regions to deploy resources here
+
 	// Name of resource group for each region
 	static final String[] AZURE_RG_REGIONS = Arrays.stream(REGIONS)
-			.map(reg -> "rg" + MY_ID + "-" + reg.name() ).toArray(String[]::new);
+			.map(reg -> "rg" + MY_ID + "-" + reg.name()).toArray(String[]::new);
 
-	// Name of application server to be launched in each regions -- launching the application
+	// Name of application server to be launched in each regions -- launching the
+	// application
 	// server must be done using mvn, as you have been doing
 	// TODO: this name should be the same as defined in your app
 	static final String[] AZURE_APP_NAME = Arrays.stream(REGIONS).map(reg -> "app" + MY_ID + reg.name())
@@ -72,11 +73,11 @@ public class AzureManagement {
 	// Name of Blob storage account
 	static final String[] AZURE_STORAGE_NAME = Arrays.stream(REGIONS).map(reg -> "sto" + MY_ID + reg.name())
 			.toArray(String[]::new);
-	
+
 	// Name of Redis server to be defined
 	static final String[] AZURE_REDIS_NAME = Arrays.stream(REGIONS).map(reg -> "redis" + MY_ID + reg.name())
 			.toArray(String[]::new);
-		
+
 	// Name of Azure functions to be launched in each regions
 	static final String[] AZURE_FUNCTIONS_NAME = Arrays.stream(REGIONS).map(reg -> "fun" + MY_ID + reg.name())
 			.toArray(String[]::new);
@@ -84,20 +85,21 @@ public class AzureManagement {
 	// Name of property file with keys and URLS to access resources
 	static final String[] AZURE_PROPS_LOCATIONS = Arrays.stream(REGIONS)
 			.map(reg -> "azurekeys-" + reg.name() + ".props").toArray(String[]::new);
-	
-	// Name of shell script file with commands to set application setting for you application server
+
+	// Name of shell script file with commands to set application setting for you
+	// application server
 	// and Azure functions
 	static final String[] AZURE_SETTINGS_LOCATIONS = Arrays.stream(REGIONS)
 			.map(reg -> "azureprops-" + reg.name() + ".sh").toArray(String[]::new);
-		
+
 	public static AzureResourceManager createManagementClient() throws IOException {
 		AzureProfile profile = new AzureProfile(AzureEnvironment.AZURE);
 		TokenCredential credential = new DefaultAzureCredentialBuilder()
-		    .authorityHost(profile.getEnvironment().getActiveDirectoryEndpoint())
-		    .build();
+				.authorityHost(profile.getEnvironment().getActiveDirectoryEndpoint())
+				.build();
 		AzureResourceManager azure = AzureResourceManager
-		    .authenticate(credential, profile)
-		    .withDefaultSubscription();
+				.authenticate(credential, profile)
+				.withDefaultSubscription();
 		System.out.println("Azure client created with success");
 		return azure;
 	}
@@ -111,7 +113,8 @@ public class AzureManagement {
 	////////////////////////////// Azure Storage Account CODE
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	public static StorageAccount createStorageAccount(AzureResourceManager azure, String rgName, String name, Region region) {
+	public static StorageAccount createStorageAccount(AzureResourceManager azure, String rgName, String name,
+			Region region) {
 		System.out.println("Creating Storage account: name = " + name + " ; group = " + rgName
 				+ " ; region = " + region.name());
 		StorageAccount storageAccount = azure.storageAccounts().define(name).withRegion(region)
@@ -134,7 +137,8 @@ public class AzureManagement {
 		return container;
 	}
 
-	public synchronized static void recordStorageKey(AzureResourceManager azure, String propFilename, String settingsFilename,
+	public synchronized static void recordStorageKey(AzureResourceManager azure, String propFilename,
+			String settingsFilename,
 			String functionsName, String functionsRGName, StorageAccount account) throws IOException {
 	}
 
@@ -188,7 +192,8 @@ public class AzureManagement {
 	////////////////////////////// COSMOS DB CODE
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	public static CosmosDBAccount createCosmosDBAccount(AzureResourceManager azure, String rgName, String name, Region[] regions) {
+	public static CosmosDBAccount createCosmosDBAccount(AzureResourceManager azure, String rgName, String name,
+			Region[] regions) {
 		System.out.println("Creating CosmosDB account: name = " + name + " ; group = " + rgName
 				+ " ; main region = " + regions[0].name() + " ; number regions = " + regions.length);
 
@@ -285,7 +290,7 @@ public class AzureManagement {
 		CosmosDatabaseProperties props = new CosmosDatabaseProperties(dbname);
 		ThroughputProperties throughputProperties = ThroughputProperties.createManualThroughput(400);
 		var res = client.createDatabase(props, throughputProperties);
-		System.err.println( "----->" + res);
+		System.err.println("----->" + res);
 		System.out.println("CosmosDB database created with success: name = " + dbname);
 	}
 
@@ -329,8 +334,9 @@ public class AzureManagement {
 			System.out.println("Redis cache created with success: name = " + name + "@" + region);
 		}
 	}
-	public synchronized static void dumpRedisCacheInfo(Map<String, String> props, String propFilename, 
-				String settingsFilename, String appName, String functionName, String rgName, RedisCache cache)
+
+	public synchronized static void dumpRedisCacheInfo(Map<String, String> props, String propFilename,
+			String settingsFilename, String appName, String functionName, String rgName, RedisCache cache)
 			throws IOException {
 		RedisAccessKeys redisAccessKey = cache.regenerateKey(RedisKeyType.PRIMARY);
 		synchronized (AzureManagement.class) {
@@ -385,12 +391,13 @@ public class AzureManagement {
 	////////////////////////////// AZURE FUNCTIONS CODE
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	
-	public static FunctionApp createAzureFunctions(AzureResourceManager azure, String rgName, String name, Region region) {
+	public static FunctionApp createAzureFunctions(AzureResourceManager azure, String rgName, String name,
+			Region region) {
 		try {
-			System.out.println("Creating Azure functions : name = " + name + "; region = " + region + " ; group = " + rgName);
-			
-			Creatable<FunctionApp> azureFunctionDefinition  = azure.functionApps().define(name)
+			System.out.println(
+					"Creating Azure functions : name = " + name + "; region = " + region + " ; group = " + rgName);
+
+			Creatable<FunctionApp> azureFunctionDefinition = azure.functionApps().define(name)
 					.withRegion(region)
 					.withNewResourceGroup(rgName)
 					.withRuntime("java")
@@ -398,10 +405,10 @@ public class AzureManagement {
 
 			return azureFunctionDefinition.create();
 		} finally {
-			System.out.println("Created Azure functions created with success: name = " + name + "; region = " + region + "; group = " + rgName);
+			System.out.println("Created Azure functions created with success: name = " + name + "; region = " + region
+					+ "; group = " + rgName);
 		}
 	}
-	
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	////////////////////////////// AZURE DELETE CODE
@@ -415,16 +422,14 @@ public class AzureManagement {
 		try {
 			System.setProperty(org.slf4j.simple.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "Error");
 
-
 			final Map<String, Map<String, String>> props = new HashMap<String, Map<String, String>>();
 			Arrays.stream(REGIONS).forEach(reg -> props.put(reg.name(), new HashMap<String, String>()));
 
 			var threads = new ArrayList<Thread>();
 
-
 			var azure = createManagementClient();
 			if (args.length == 1 && args[0].equalsIgnoreCase("--delete")) {
-				Arrays.stream(AZURE_RG_REGIONS).forEach(reg -> deleteResourceGroup(azure, reg));					
+				Arrays.stream(AZURE_RG_REGIONS).forEach(reg -> deleteResourceGroup(azure, reg));
 			} else {
 				// Init properties files
 				for (String propF : AZURE_PROPS_LOCATIONS) {
@@ -482,7 +487,7 @@ public class AzureManagement {
 							CosmosClient cosmosClient = getCosmosClient(accountCosmosDB);
 							createCosmosDatabase(cosmosClient, AZURE_COSMOSDB_DATABASE);
 
-							//TODO: create the collections you have in your application
+							// TODO: create the collections you have in your application
 							createCosmosCollection(cosmosClient, AZURE_COSMOSDB_DATABASE, "users", "/id", null);
 
 							System.err.println("Azure Cosmos DB resources created with success");
@@ -503,7 +508,7 @@ public class AzureManagement {
 							for (int i = 0; i < REGIONS.length; i++) {
 								RedisCache cache = createRedis(azure0, AZURE_RG_REGIONS[i], AZURE_REDIS_NAME[i],
 										REGIONS[i]);
-								dumpRedisCacheInfo(props.get(REGIONS[i].name()), AZURE_PROPS_LOCATIONS[i], 
+								dumpRedisCacheInfo(props.get(REGIONS[i].name()), AZURE_PROPS_LOCATIONS[i],
 										AZURE_SETTINGS_LOCATIONS[i], AZURE_APP_NAME[i], AZURE_FUNCTIONS_NAME[i],
 										AZURE_RG_REGIONS[i], cache);
 							}
@@ -516,13 +521,14 @@ public class AzureManagement {
 					threads.add(th);
 					th.start();
 				}
-				
+
 				if (CREATE_FUNCTIONS) {
 					Thread th = new Thread(() -> {
 						try {
 							final AzureResourceManager azure0 = createManagementClient();
 							for (int i = 0; i < REGIONS.length; i++) {
-								var func = createAzureFunctions(azure0, AZURE_RG_REGIONS[i], AZURE_FUNCTIONS_NAME[i], REGIONS[i]);
+								var func = createAzureFunctions(azure0, AZURE_RG_REGIONS[i], AZURE_FUNCTIONS_NAME[i],
+										REGIONS[i]);
 							}
 							System.err.println("Azure Functions resources created with success");
 						} catch (Exception e) {
