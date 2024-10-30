@@ -17,6 +17,8 @@ import java.util.Arrays;
 import java.util.function.Consumer;
 
 import tukano.api.Result;
+import utils.AzureKeys;
+import utils.AzureProperties;
 import utils.Hash;
 
 public class FilesystemStorage implements BlobStorage {
@@ -25,13 +27,11 @@ public class FilesystemStorage implements BlobStorage {
 	private BlobContainerClient containerClient;
 
 	public FilesystemStorage() {
-		// Get connection string in the storage access keys page
-		String storageConnectionString = "";
-
+		
 		try {
 			// Get container client
 			containerClient = new BlobContainerClientBuilder()
-				.connectionString(storageConnectionString)
+				.connectionString(AzureKeys.getKey(AzureProperties.BLOB_KEY))
 				.containerName(BLOBS_CONTAINER_NAME)
 				.buildClient();
 		}

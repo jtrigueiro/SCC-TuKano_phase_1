@@ -2,10 +2,10 @@ package tukano.impl.cache;
 
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
+import utils.AzureKeys;
+import utils.AzureProperties;
 
 public class RedisCache {
-	private static final String RedisHostname = "TODO";
-	private static final String RedisKey = "TODO";
 	private static final int REDIS_PORT = 6380;
 	private static final int REDIS_TIMEOUT = 1000;
 	private static final boolean Redis_USE_TLS = true;
@@ -25,7 +25,7 @@ public class RedisCache {
 		poolConfig.setTestWhileIdle(true);
 		poolConfig.setNumTestsPerEvictionRun(3);
 		poolConfig.setBlockWhenExhausted(true);
-		instance = new JedisPool(poolConfig, RedisHostname, REDIS_PORT, REDIS_TIMEOUT, RedisKey, Redis_USE_TLS);
+		instance = new JedisPool(poolConfig, AzureKeys.getKey(AzureProperties.REDIS_URL), REDIS_PORT, REDIS_TIMEOUT, AzureKeys.getKey(AzureProperties.REDIS_KEY), Redis_USE_TLS);
 		return instance;
 	}
 }

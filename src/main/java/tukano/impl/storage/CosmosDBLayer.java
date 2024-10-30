@@ -14,13 +14,12 @@ import com.azure.cosmos.models.CosmosQueryRequestOptions;
 import com.azure.cosmos.models.PartitionKey;
 
 import tukano.api.Result;
+import utils.AzureKeys;
+import utils.AzureProperties;
 
 import static tukano.api.Result.ErrorCode;
 
 public class CosmosDBLayer {
-	private static final String CONNECTION_URL = "https://por preencher"; // TODO
-	private static final String DB_KEY = "por preencher=="; // TODO
-	private static final String DB_NAME = "por preencher"; // TODO
 
 	private static CosmosDBLayer instance;
 
@@ -31,8 +30,8 @@ public class CosmosDBLayer {
 			return instance;
 
 		CosmosClient client = new CosmosClientBuilder()
-				.endpoint(CONNECTION_URL)
-				.key(DB_KEY)
+				.endpoint(AzureKeys.getKey(AzureProperties.COSMOSDB_URL))
+				.key(AzureKeys.getKey(AzureProperties.COSMOSDB_KEY))
 				.directMode()
 				// .gatewayMode() // replace by .directMode() for better performance
 				.consistencyLevel(ConsistencyLevel.BOUNDED_STALENESS)
@@ -56,7 +55,7 @@ public class CosmosDBLayer {
 	private synchronized void init() {
 		if (db != null)
 			return;
-		db = client.getDatabase(DB_NAME);
+		db = client.getDatabase(AzureKeys.getKey(AzureProperties.COSMOSDB_DATABASE));
 		container = db.getContainer(containerName);
 	}
 
