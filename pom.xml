@@ -25,6 +25,33 @@
 						<path>/tukano</path>
 					</configuration>
 			</plugin>
+			<plugin> 
+				<groupId>com.microsoft.azure</groupId>  
+				<artifactId>azure-webapp-maven-plugin</artifactId>  
+				<version>2.13.0</version>
+				<configuration>
+					<schemaVersion>V2</schemaVersion>
+					<pricingTier>F1</pricingTier>
+					<region>westeurope</region>
+					<runtime>
+						<os>linux</os>
+						<javaVersion>Java 17</javaVersion>
+						<webContainer>Tomcat 10.0</webContainer>
+					</runtime>
+					<deployment>
+						<resources>
+							<resource>
+								<directory>${project.basedir}/target</directory>
+								<includes>
+									<include>*.war</include>
+								</includes>
+							</resource>
+						</resources>
+					</deployment>
+					<resourceGroup>rg5683758119-northeurope</resourceGroup>
+					<appName>app5683758119northeurope</appName>
+				</configuration>
+			</plugin> 
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.8.1</version>
