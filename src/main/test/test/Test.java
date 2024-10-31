@@ -1,5 +1,6 @@
 package test;
 
+/*
 import java.io.File;
 import java.net.URI;
 import java.nio.ByteBuffer;
@@ -117,3 +118,4 @@ public class Test {
 		
 	}
 }
+	*/
