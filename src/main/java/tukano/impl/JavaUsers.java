@@ -7,7 +7,6 @@ import static tukano.api.Result.errorOrValue;
 import static tukano.api.Result.ok;
 import static tukano.api.Result.ErrorCode.BAD_REQUEST;
 import static tukano.api.Result.ErrorCode.FORBIDDEN;
-import static tukano.api.Result.ErrorCode.INTERNAL_ERROR;
 
 import java.util.List;
 import java.util.concurrent.Executors;
