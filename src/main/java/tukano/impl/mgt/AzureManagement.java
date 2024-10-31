@@ -44,18 +44,16 @@ import com.azure.resourcemanager.storage.models.StorageAccountKey;
 import com.azure.resourcemanager.storage.models.StorageAccountSkuType;
 
 public class AzureManagement {
-	// TODO: These variable allow you to control what is being created
 	static final boolean CREATE_REDIS = true;
 	static final boolean CREATE_STORAGE = true;
 	static final boolean CREATE_COSMOSDB = true;
 	static final boolean CREATE_FUNCTIONS = false;
 
-	// TODO: change your suffix and other names if you want
 	static final String MY_ID = "5683758119"; // Add your suffix here
 
 	static final String AZURE_COSMOSDB_NAME = "cosmos" + MY_ID; // Cosmos DB account name
 	static final String AZURE_COSMOSDB_DATABASE = "cosmosdb" + MY_ID; // Cosmos DB database name
-	static final String[] BLOB_CONTAINERS = { "shorts" }; // TODO: Containers to add to the blob storage
+	static final String[] BLOB_CONTAINERS = { "shorts" }; //
 
 	static final Region[] REGIONS = new Region[] { Region.EUROPE_NORTH }; // Define the regions to deploy resources here
 
@@ -66,7 +64,6 @@ public class AzureManagement {
 	// Name of application server to be launched in each regions -- launching the
 	// application
 	// server must be done using mvn, as you have been doing
-	// TODO: this name should be the same as defined in your app
 	static final String[] AZURE_APP_NAME = Arrays.stream(REGIONS).map(reg -> "app" + MY_ID + reg.name())
 			.toArray(String[]::new);
 

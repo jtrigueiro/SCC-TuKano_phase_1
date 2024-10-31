@@ -32,7 +32,7 @@
 				<configuration>
 					<schemaVersion>V2</schemaVersion>
 					<pricingTier>F1</pricingTier>
-					<region>westeurope</region>
+					<region>northeurope</region>
 					<runtime>
 						<os>linux</os>
 						<javaVersion>Java 17</javaVersion>
