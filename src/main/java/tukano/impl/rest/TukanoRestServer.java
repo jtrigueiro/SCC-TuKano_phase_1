@@ -38,7 +38,7 @@ public class TukanoRestServer extends Application{
 		System.setProperty("java.util.logging.SimpleFormatter.format", "%4$s: %5$s");
 	}
 
-	protected TukanoRestServer() {
+	public TukanoRestServer() {
 		resources.add(ControlResource.class);
 		singletons.add(new RestUsersResource());
 		singletons.add(new RestShortsResource());
