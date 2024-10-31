@@ -40,9 +40,9 @@ public class TukanoRestServer extends Application{
 
 	public TukanoRestServer() {
 		resources.add(ControlResource.class);
-		singletons.add(new RestUsersResource());
-		singletons.add(new RestShortsResource());
-		singletons.add(new RestBlobsResource());
+		resources.add(new RestUsersResource().getClass());
+		resources.add(new RestBlobsResource().getClass());
+		resources.add(new RestBlobsResource().getClass());
 	}
 
 	@Override
