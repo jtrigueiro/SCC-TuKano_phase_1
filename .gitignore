@@ -2,3 +2,5 @@
 /target
 azureprops-northeurope.sh
 azurekeys-northeurope.props
+azureprops-westeurope.sh
+azurekeys-westeurope.props
