@@ -14,6 +14,7 @@ import com.azure.cosmos.models.CosmosQueryRequestOptions;
 import com.azure.cosmos.models.PartitionKey;
 
 import tukano.api.Result;
+import tukano.api.Result.ErrorCode;
 import utils.AzureKeys;
 import utils.AzureProperties;
 
@@ -30,8 +31,8 @@ public class CosmosDBLayer {
 			return instance;
 
 		CosmosClient client = new CosmosClientBuilder()
-				.endpoint(AzureKeys.getKey(AzureProperties.COSMOSDB_URL))
-				.key(AzureKeys.getKey(AzureProperties.COSMOSDB_KEY))
+				.endpoint("https://cosmos58119.documents.azure.com:443/")
+				.key("WwBfNL52lICdB2MXB4eopk7UsTEB2GgWOfNUIhq0T3xSbvYIpxKWnkeAqUPTdekMgIP0fuvhzyTwACDbtbV0Dw==")
 				.directMode()
 				// .gatewayMode() // replace by .directMode() for better performance
 				.consistencyLevel(ConsistencyLevel.BOUNDED_STALENESS)
@@ -55,7 +56,7 @@ public class CosmosDBLayer {
 	private synchronized void init() {
 		if (db != null)
 			return;
-		db = client.getDatabase(AzureKeys.getKey(AzureProperties.COSMOSDB_DATABASE));
+		db = client.getDatabase("cosmosdb58119");
 		container = db.getContainer(containerName);
 	}
 
