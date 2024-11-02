@@ -32,10 +32,10 @@ public class CosmosDBLayer {
 
 		CosmosClient client = new CosmosClientBuilder()
 				.endpoint("https://cosmos58119.documents.azure.com:443/")
-				.key("WwBfNL52lICdB2MXB4eopk7UsTEB2GgWOfNUIhq0T3xSbvYIpxKWnkeAqUPTdekMgIP0fuvhzyTwACDbtbV0Dw==")
-				.directMode()
-				// .gatewayMode() // replace by .directMode() for better performance
-				.consistencyLevel(ConsistencyLevel.BOUNDED_STALENESS)
+				.key("0nmSp0hHa3Nd9H05TZ3v4UjWaODkwTSjXXPqfDjjC4LIXMzftU3dSbXc07dPMesTjrzhv4v0y4KcACDbreSPYw==")
+				// .directMode()
+				.gatewayMode() // replace by .directMode() for better performance
+				.consistencyLevel(ConsistencyLevel.SESSION)
 				.connectionSharingAcrossClientsEnabled(true)
 				.contentResponseOnWriteEnabled(true) // On write, return the object written
 				.buildClient();

@@ -9,13 +9,13 @@ public class RedisCache {
 	private static final int REDIS_PORT = 6380;
 	private static final int REDIS_TIMEOUT = 1000;
 	private static final boolean Redis_USE_TLS = true;
-	
+
 	private static JedisPool instance;
-	
+
 	public synchronized static JedisPool getCachePool() {
-		if( instance != null)
+		if (instance != null)
 			return instance;
-		
+
 		var poolConfig = new JedisPoolConfig();
 		poolConfig.setMaxTotal(128);
 		poolConfig.setMaxIdle(128);
@@ -25,7 +25,8 @@ public class RedisCache {
 		poolConfig.setTestWhileIdle(true);
 		poolConfig.setNumTestsPerEvictionRun(3);
 		poolConfig.setBlockWhenExhausted(true);
-		instance = new JedisPool(poolConfig, AzureKeys.getKey(AzureProperties.REDIS_URL), REDIS_PORT, REDIS_TIMEOUT, AzureKeys.getKey(AzureProperties.REDIS_KEY), Redis_USE_TLS);
+		instance = new JedisPool(poolConfig, "redis58119northeurope.redis.cache.windows.net", REDIS_PORT, REDIS_TIMEOUT,
+				"B1AYMnYtJLseBEtTwlVTIpNxAZHzZF1Y1AzCaGuPga4=", Redis_USE_TLS);
 		return instance;
 	}
 }

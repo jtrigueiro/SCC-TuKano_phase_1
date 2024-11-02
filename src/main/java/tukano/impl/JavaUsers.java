@@ -21,38 +21,40 @@ import tukano.impl.storage.CosmosDBLayer;
 import utils.JSON;
 
 public class JavaUsers implements Users {
-	
+
 	private static Logger Log = Logger.getLogger(JavaUsers.class.getName());
 
 	private static Users instance;
-	
+
 	synchronized public static Users getInstance() {
-		if( instance == null )
+		if (instance == null)
 			instance = new JavaUsers();
 		return instance;
 	}
-	
-	private JavaUsers() {}
-	
+
+	private JavaUsers() {
+	}
+
 	@Override
 	public Result<String> createUser(User user) {
 		Log.info(() -> format("createUser : %s\n", user));
 
-		if( badUserInfo( user ) )
-				return error(BAD_REQUEST);
+		if (badUserInfo(user))
+			return error(BAD_REQUEST);
 
-		var result = errorOrValue( CosmosDBLayer.getInstance(Users.NAME).insertOne( user), user.getUserId() );
+		var result = errorOrValue(CosmosDBLayer.getInstance(Users.NAME).insertOne(user),
+				user.getUserId());
 
-		if( result.isOK())
-			try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-				jedis.set(Users.NAME + ':' + user.getUserId(), JSON.encode(user));
-			}
-		return result;
+		// i( result.isOK())
+		// try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+		// jedis.set(Users.NAME + ':' + user.getUserId(), JSON.encode(user));
+		// }
+		return result; // Result.ok(user.getUserId());// result;
 	}
 
 	@Override
 	public Result<User> getUser(String userId, String pwd) {
-		Log.info( () -> format("getUser : userId = %s, pwd = %s\n", userId, pwd));
+		Log.info(() -> format("getUser : userId = %s, pwd = %s\n", userId, pwd));
 
 		if (userId == null)
 			return error(BAD_REQUEST);
@@ -62,12 +64,12 @@ public class JavaUsers implements Users {
 			if (cached != null)
 				return validatedUserOrError(Result.ok(JSON.decode(cached, User.class)), pwd);
 
-		var result = validatedUserOrError( CosmosDBLayer.getInstance(Users.NAME).getOne( userId, User.class), pwd);
+			var result = validatedUserOrError(CosmosDBLayer.getInstance(Users.NAME).getOne(userId, User.class), pwd);
 
-		if( result.isOK())
-			jedis.set(Users.NAME + ':' + userId, JSON.encode(result.value()));
-		
-		return result;
+			if (result.isOK())
+				jedis.set(Users.NAME + ':' + userId, JSON.encode(result.value()));
+
+			return result;
 		}
 	}
 
@@ -79,7 +81,7 @@ public class JavaUsers implements Users {
 			return error(BAD_REQUEST);
 
 		CosmosDBLayer db = CosmosDBLayer.getInstance(Users.NAME);
-		
+
 		try (Jedis jedis = RedisCache.getCachePool().getResource()) {
 			var cached = jedis.get(Users.NAME + ':' + userId);
 			Result<User> rUser;
@@ -87,13 +89,13 @@ public class JavaUsers implements Users {
 			if (cached != null)
 				rUser = Result.ok(JSON.decode(cached, User.class));
 			else
-				rUser = db.getOne( userId, User.class);
+				rUser = db.getOne(userId, User.class);
 
 			if (validatedUserOrError(rUser, pwd).isOK()) {
 				User user = rUser.value().updateFrom(other);
-				if(db.updateOne( user.updateFrom(user)).isOK()) {
+				if (db.updateOne(user.updateFrom(user)).isOK()) {
 					rUser = db.getOne(userId, User.class);
-					if(rUser.isOK())
+					if (rUser.isOK())
 						jedis.set(Users.NAME + ':' + userId, JSON.encode(rUser.value()));
 				}
 			}
@@ -105,7 +107,7 @@ public class JavaUsers implements Users {
 	public Result<User> deleteUser(String userId, String pwd) {
 		Log.info(() -> format("deleteUser : userId = %s, pwd = %s\n", userId, pwd));
 
-		if (userId == null || pwd == null )
+		if (userId == null || pwd == null)
 			return error(BAD_REQUEST);
 
 		try (Jedis jedis = RedisCache.getCachePool().getResource()) {
@@ -117,14 +119,14 @@ public class JavaUsers implements Users {
 			else
 				rUser = CosmosDBLayer.getInstance(Users.NAME).getOne(userId, User.class);
 
-			return errorOrResult( validatedUserOrError(rUser, pwd), user -> {
+			return errorOrResult(validatedUserOrError(rUser, pwd), user -> {
 
 				// Delete user shorts and related info asynchronously in a separate thread
-				Executors.defaultThreadFactory().newThread( () -> {
+				Executors.defaultThreadFactory().newThread(() -> {
 					JavaShorts.getInstance().deleteAllShorts(userId, pwd, Token.get(userId));
 					JavaBlobs.getInstance().deleteAllBlobs(userId, Token.get(userId));
 				}).start();
-				
+
 				CosmosDBLayer.getInstance(Users.NAME).deleteOne(user);
 				return Result.ok(user);
 			});
@@ -133,7 +135,7 @@ public class JavaUsers implements Users {
 
 	@Override
 	public Result<List<User>> searchUsers(String pattern) {
-		Log.info( () -> format("searchUsers : patterns = %s\n", pattern));
+		Log.info(() -> format("searchUsers : patterns = %s\n", pattern));
 
 		var query = format("SELECT * FROM User u WHERE UPPER(u.userId) LIKE '%%%s%%'", pattern.toUpperCase());
 		var hits = CosmosDBLayer.getInstance(Users.NAME).query(query, User.class).value()
@@ -144,19 +146,18 @@ public class JavaUsers implements Users {
 		return ok(hits);
 	}
 
-	
-	private Result<User> validatedUserOrError( Result<User> res, String pwd ) {
-		if( res.isOK())
-			return res.value().getPwd().equals( pwd ) ? res : error(FORBIDDEN);
+	private Result<User> validatedUserOrError(Result<User> res, String pwd) {
+		if (res.isOK())
+			return res.value().getPwd().equals(pwd) ? res : error(FORBIDDEN);
 		else
 			return res;
 	}
-	
-	private boolean badUserInfo( User user) {
+
+	private boolean badUserInfo(User user) {
 		return (user.userId() == null || user.pwd() == null || user.displayName() == null || user.email() == null);
 	}
-	
-	private boolean badUpdateUserInfo( String userId, String pwd, User info) {
-		return (userId == null || pwd == null || info.getUserId() != null && ! userId.equals( info.getUserId()));
+
+	private boolean badUpdateUserInfo(String userId, String pwd, User info) {
+		return (userId == null || pwd == null || info.getUserId() != null && !userId.equals(info.getUserId()));
 	}
 }

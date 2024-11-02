@@ -37,6 +37,9 @@ public class TukanoRestServer extends Application {
 		resources.add(RestBlobsResource.class);
 		resources.add(RestUsersResource.class);
 		resources.add(RestShortsResource.class);
+		singletons.add(new RestBlobsResource());
+		singletons.add(new RestShortsResource());
+		singletons.add(new RestUsersResource());
 		Token.setSecret("58119");
 	}
 
