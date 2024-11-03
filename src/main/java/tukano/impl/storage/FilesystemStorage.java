@@ -1,6 +1,5 @@
 package tukano.impl.storage;
 
-
 import static tukano.api.Result.error;
 import static tukano.api.Result.ok;
 import static tukano.api.Result.ErrorCode.BAD_REQUEST;
@@ -27,24 +26,24 @@ public class FilesystemStorage implements BlobStorage {
 	private BlobContainerClient containerClient;
 
 	public FilesystemStorage() {
-		
+
 		try {
 			// Get container client
 			containerClient = new BlobContainerClientBuilder()
-				.connectionString(AzureKeys.getKey(AzureProperties.BLOB_KEY))
-				.containerName(BLOBS_CONTAINER_NAME)
-				.buildClient();
-		}
-		catch (Exception e) {
+					.connectionString(
+							"DefaultEndpointsProtocol=https;AccountName=sto58119northeurope;AccountKey=vu/sPNn+tj4MHDkJu3o1Bw9Ag3vceN8DDAYXkwQRn9hDknVcHoafiEd0h2UiLqPkC1dWn9POgL8Z+AStQLtHeQ==;EndpointSuffix=core.windows.net")
+					.containerName(BLOBS_CONTAINER_NAME)
+					.buildClient();
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
-	
+
 	@Override
 	public Result<Void> write(String path, byte[] bytes) {
 		if (path == null)
-            return error(BAD_REQUEST);
-		
+			return error(BAD_REQUEST);
+
 		try {
 			// Get client to blob
 			BlobClient blob = containerClient.getBlobClient(path);
@@ -59,8 +58,7 @@ public class FilesystemStorage implements BlobStorage {
 
 			// Upload contents from BinaryData
 			blob.upload(BinaryData.fromBytes(bytes));
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 			return error(INTERNAL_ERROR);
 		}
@@ -80,10 +78,9 @@ public class FilesystemStorage implements BlobStorage {
 			// Check if blob exists
 			if (!blob.exists())
 				return error(NOT_FOUND);
-			
+
 			return ok(blob.downloadContent().toBytes());
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 			return error(INTERNAL_ERROR);
 		}
@@ -104,15 +101,14 @@ public class FilesystemStorage implements BlobStorage {
 
 			// Download contents to sink
 			sink.accept(blob.downloadContent().toBytes());
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 			return error(INTERNAL_ERROR);
 		}
 
 		return ok();
 	}
-	
+
 	@Override
 	public Result<Void> delete(String path) {
 		if (path == null)
@@ -128,13 +124,12 @@ public class FilesystemStorage implements BlobStorage {
 
 			// Delete blob
 			blob.delete();
-		}
-		catch (Exception e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 			return error(INTERNAL_ERROR);
 		}
 
 		return ok();
 	}
-	
+
 }

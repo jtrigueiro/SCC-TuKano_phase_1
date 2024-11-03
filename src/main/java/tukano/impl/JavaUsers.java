@@ -45,11 +45,11 @@ public class JavaUsers implements Users {
 		var result = errorOrValue(CosmosDBLayer.getInstance(Users.NAME).insertOne(user),
 				user.getId());
 
-		// i( result.isOK())
+		// if (result.isOK())
 		// try (Jedis jedis = RedisCache.getCachePool().getResource()) {
 		// jedis.set(Users.NAME + ':' + user.getUserId(), JSON.encode(user));
 		// }
-		return result; // Result.ok(user.getUserId());// result;
+		return result;
 	}
 
 	@Override
@@ -137,7 +137,7 @@ public class JavaUsers implements Users {
 	public Result<List<User>> searchUsers(String pattern) {
 		Log.info(() -> format("searchUsers : patterns = %s\n", pattern));
 
-		var query = format("SELECT * FROM User u WHERE UPPER(u.userId) LIKE '%%%s%%'", pattern.toUpperCase());
+		var query = format("SELECT * FROM User u WHERE UPPER(u.id) LIKE '%%%s%%'", pattern.toUpperCase());
 		var hits = CosmosDBLayer.getInstance(Users.NAME).query(query, User.class).value()
 				.stream()
 				.map(User::copyWithoutPassword)

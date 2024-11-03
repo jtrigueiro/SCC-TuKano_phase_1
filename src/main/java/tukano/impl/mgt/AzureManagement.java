@@ -43,6 +43,9 @@ import com.azure.resourcemanager.storage.models.StorageAccount;
 import com.azure.resourcemanager.storage.models.StorageAccountKey;
 import com.azure.resourcemanager.storage.models.StorageAccountSkuType;
 
+import tukano.api.Shorts;
+import tukano.api.Users;
+
 public class AzureManagement {
 	// TODO: These variable allow you to control what is being created
 	static final boolean CREATE_REDIS = true;
@@ -488,8 +491,13 @@ public class AzureManagement {
 							createCosmosDatabase(cosmosClient, AZURE_COSMOSDB_DATABASE);
 
 							// TODO: create the collections you have in your application
-							createCosmosCollection(cosmosClient, AZURE_COSMOSDB_DATABASE, "users", "/userId", null);
-							createCosmosCollection(cosmosClient, AZURE_COSMOSDB_DATABASE, "shorts", "/shortId", null);
+							createCosmosCollection(cosmosClient, AZURE_COSMOSDB_DATABASE, Users.NAME, "/id", null);
+							createCosmosCollection(cosmosClient, AZURE_COSMOSDB_DATABASE, Shorts.NAME, "/id",
+									null);
+							createCosmosCollection(cosmosClient, AZURE_COSMOSDB_DATABASE, Shorts.FOLLOWING, "/id",
+									null);
+							createCosmosCollection(cosmosClient, AZURE_COSMOSDB_DATABASE, Shorts.LIKES, "/id", null);
+
 							System.err.println("Azure Cosmos DB resources created with success");
 
 						} catch (Exception e) {

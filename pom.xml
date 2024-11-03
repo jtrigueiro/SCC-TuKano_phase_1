@@ -57,7 +57,7 @@
 			        <resourceGroup>rg58119</resourceGroup>
 			        <appName>58119-56837</appName>
 			        <pricingTier>F1</pricingTier>
-			        <region>westeurope</region>
+			        <region>northeurope</region>
 			        <runtime>
 			            <os>Windows</os>
 			            <javaVersion>Java 17</javaVersion>
