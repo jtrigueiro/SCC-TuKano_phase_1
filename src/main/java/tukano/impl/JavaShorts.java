@@ -51,7 +51,8 @@ public class JavaShorts implements Shorts {
 			var blobUrl = format("%s/%s/%s", TukanoRestServer.serverURI, Blobs.NAME, shortId);
 			var shrt = new Short(shortId, userId, blobUrl);
 
-			return errorOrValue(CosmosDBLayer.getInstance(Shorts.NAME).insertOne(shrt), s -> s.copyWithLikes_And_Token(0));
+			return errorOrValue(CosmosDBLayer.getInstance(Shorts.NAME).insertOne(shrt),
+					s -> s.copyWithLikes_And_Token(0));
 		});
 	}
 
@@ -73,7 +74,8 @@ public class JavaShorts implements Shorts {
 			var query = format("SELECT count(*) FROM Likes l WHERE l.shortId = '%s'", shortId);
 			var likes = db.query(query, Long.class).value();
 
-			var result = errorOrValue(db.getOne(shortId, Short.class), shrt -> shrt.copyWithLikes_And_Token(likes.get(0)));
+			var result = errorOrValue(db.getOne(shortId, Short.class),
+					shrt -> shrt.copyWithLikes_And_Token(likes.get(0)));
 
 			if (result.isOK())
 				jedis.set(Shorts.NAME + ':' + shortId, JSON.encode(result.value()));
@@ -90,18 +92,18 @@ public class JavaShorts implements Shorts {
 
 			return errorOrResult(okUser(shrt.getOwnerId(), password), user -> {
 
-					CosmosDBLayer db = CosmosDBLayer.getInstance(Shorts.NAME);
+				CosmosDBLayer db = CosmosDBLayer.getInstance(Shorts.NAME);
 
-					try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-						jedis.del(Shorts.NAME + ':' + shortId);
-					}
+				try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+					jedis.del(Shorts.NAME + ':' + shortId);
+				}
 
-					db.deleteOne(shrt);
+				db.deleteOne(shrt);
 
-					var query = format("SELECT Likes l WHERE l.shortId = '%s'", shortId);
-					db.deleteMany(query, Likes.class);
+				var query = format("SELECT Likes l WHERE l.shortId = '%s'", shortId);
+				db.deleteMany(query, Likes.class);
 
-					JavaBlobs.getInstance().delete(shrt.getBlobUrl(), Token.get());
+				JavaBlobs.getInstance().delete(shrt.getBlobUrl(), Token.get());
 				return Result.ok();
 			});
 		});
@@ -133,7 +135,8 @@ public class JavaShorts implements Shorts {
 		Log.info(() -> format("followers : userId = %s, pwd = %s\n", userId, password));
 
 		var query = format("SELECT f.follower FROM Following f WHERE f.followee = '%s'", userId);
-		return errorOrValue(okUser(userId, password), CosmosDBLayer.getInstance(Shorts.NAME).query(query, String.class));
+		return errorOrValue(okUser(userId, password),
+				CosmosDBLayer.getInstance(Shorts.NAME).query(query, String.class));
 	}
 
 	@Override
@@ -156,7 +159,8 @@ public class JavaShorts implements Shorts {
 
 			var query = format("SELECT l.userId FROM Likes l WHERE l.shortId = '%s'", shortId);
 
-			return errorOrValue(okUser(shrt.getOwnerId(), password), CosmosDBLayer.getInstance(Shorts.NAME).query(query, String.class));
+			return errorOrValue(okUser(shrt.getOwnerId(), password),
+					CosmosDBLayer.getInstance(Shorts.NAME).query(query, String.class));
 		});
 	}
 
@@ -172,7 +176,8 @@ public class JavaShorts implements Shorts {
 						f.followee = s.ownerId AND f.follower = '%s'
 				ORDER BY s.timestamp DESC""";
 
-		return errorOrValue(okUser(userId, password), CosmosDBLayer.getInstance(Shorts.NAME).query(format(QUERY_FMT, userId, userId), String.class));
+		return errorOrValue(okUser(userId, password),
+				CosmosDBLayer.getInstance(Shorts.NAME).query(format(QUERY_FMT, userId, userId), String.class));
 	}
 
 	protected Result<User> okUser(String userId, String pwd) {
@@ -200,7 +205,7 @@ public class JavaShorts implements Shorts {
 		var query1 = format("SELECT Short s WHERE s.ownerId = '%s'", userId);
 		var shorts = db.query(query1, Short.class).value();
 		try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-			shorts.forEach(shrt -> jedis.del(Shorts.NAME + ':' + shrt.getShortId()));
+			shorts.forEach(shrt -> jedis.del(Shorts.NAME + ':' + shrt.getId()));
 		}
 		db.deleteMany(query1, Short.class);
 

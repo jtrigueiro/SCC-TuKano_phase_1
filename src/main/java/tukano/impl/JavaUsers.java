@@ -43,7 +43,7 @@ public class JavaUsers implements Users {
 			return error(BAD_REQUEST);
 
 		var result = errorOrValue(CosmosDBLayer.getInstance(Users.NAME).insertOne(user),
-				user.getUserId());
+				user.getId());
 
 		// i( result.isOK())
 		// try (Jedis jedis = RedisCache.getCachePool().getResource()) {
@@ -158,6 +158,6 @@ public class JavaUsers implements Users {
 	}
 
 	private boolean badUpdateUserInfo(String userId, String pwd, User info) {
-		return (userId == null || pwd == null || info.getUserId() != null && !userId.equals(info.getUserId()));
+		return (userId == null || pwd == null || info.getId() != null && !userId.equals(info.getId()));
 	}
 }
