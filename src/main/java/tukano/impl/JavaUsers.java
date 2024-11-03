@@ -45,10 +45,10 @@ public class JavaUsers implements Users {
 		var result = errorOrValue(CosmosDBLayer.getInstance(Users.NAME).insertOne(user),
 				user.getId());
 
-		// if (result.isOK())
-		// try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-		// jedis.set(Users.NAME + ':' + user.getUserId(), JSON.encode(user));
-		// }
+		if (result.isOK())
+			try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+				jedis.set(Users.NAME + ':' + user.getId(), JSON.encode(user));
+			}
 		return result;
 	}
 
