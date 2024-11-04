@@ -8,9 +8,9 @@ import java.util.logging.Logger;
 
 import tukano.impl.Token;
 import tukano.impl.svr.ControlResource;
-import utils.Args;
+import utils.Args;*/
 import utils.IP;
-*/
+
 import jakarta.ws.rs.core.Application;
 import tukano.impl.Token;
 
@@ -23,10 +23,10 @@ public class TukanoRestServer extends Application {
 	 * Logger.getLogger(TukanoRestServer.class.getName());
 	 * 
 	 * static final String INETADDR_ANY = "0.0.0.0";
-	 * static String SERVER_BASE_URI = "http://%s:%s/rest";
-	 * 
-	 * public static final int PORT = 8080;
 	 */
+	static String SERVER_BASE_URI = "http://%s:%s/rest";
+
+	public static final int PORT = 8080;
 
 	public static String serverURI;
 
@@ -34,6 +34,7 @@ public class TukanoRestServer extends Application {
 	private Set<Class<?>> resources = new HashSet<>();
 
 	public TukanoRestServer() {
+		serverURI = String.format(SERVER_BASE_URI, IP.hostname(), PORT);
 		resources.add(RestBlobsResource.class);
 		resources.add(RestUsersResource.class);
 		resources.add(RestShortsResource.class);
@@ -41,6 +42,7 @@ public class TukanoRestServer extends Application {
 		singletons.add(new RestShortsResource());
 		singletons.add(new RestUsersResource());
 		Token.setSecret("58119");
+
 	}
 
 	@Override

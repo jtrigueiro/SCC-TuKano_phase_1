@@ -27,7 +27,7 @@ public class CosmosDBLayer {
 	private String containerName;
 
 	public static synchronized CosmosDBLayer getInstance(String containerName) {
-		if (instance != null)
+		if (instance != null && instance.containerName.equals(containerName))
 			return instance;
 
 		CosmosClient client = new CosmosClientBuilder()

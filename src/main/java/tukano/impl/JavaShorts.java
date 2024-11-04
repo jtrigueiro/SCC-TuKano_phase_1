@@ -72,11 +72,11 @@ public class JavaShorts implements Shorts {
 				return Result.ok(JSON.decode(cached, Short.class));
 
 			CosmosDBLayer dblikes = CosmosDBLayer.getInstance(Shorts.LIKES);
-			CosmosDBLayer dbshorts = CosmosDBLayer.getInstance(Shorts.NAME);
 
 			var query = format("SELECT count(*) FROM Likes l WHERE l.shortId = '%s'", shortId);
 			var likes = dblikes.query(query, Long.class).value();
 
+			CosmosDBLayer dbshorts = CosmosDBLayer.getInstance(Shorts.NAME);
 			var result = errorOrValue(dbshorts.getOne(shortId, Short.class),
 					shrt -> shrt.copyWithLikes_And_Token(likes.get(0)));
 
