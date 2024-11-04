@@ -49,7 +49,8 @@ public class JavaShorts implements Shorts {
 
 		return errorOrResult(okUser(userId, password), user -> {
 
-			var shortId = format("%s+%s", userId, UUID.randomUUID());
+			var shortId = format("%s+%s", userId, UUID.randomUUID()); // TODO: change "+" to "_" to work deployed on
+																		// Azure
 			var blobUrl = format("%s/%s/%s", TukanoRestServer.serverURI, Blobs.NAME, shortId);
 			var shrt = new Short(shortId, userId, blobUrl);
 
@@ -73,7 +74,7 @@ public class JavaShorts implements Shorts {
 
 			CosmosDBLayer dblikes = CosmosDBLayer.getInstance(Shorts.LIKES);
 
-			var query = format("SELECT count(*) FROM Likes l WHERE l.shortId = '%s'", shortId);
+			var query = format("SELECT count(1) AS count FROM Likes l WHERE l.shortId = '%s'", shortId);
 			var likes = dblikes.query(query, Long.class).value();
 
 			CosmosDBLayer dbshorts = CosmosDBLayer.getInstance(Shorts.NAME);
@@ -115,7 +116,7 @@ public class JavaShorts implements Shorts {
 	}
 
 	@Override
-	public Result<List<String>> getShorts(String userId) {
+	public Result<List<String>> getShorts(String userId) { // TODO: fix 500 error
 		Log.info(() -> format("getShorts : userId = %s\n", userId));
 
 		var query = format("SELECT s.id FROM Short s WHERE s.ownerId = '%s'", userId);
