@@ -26,7 +26,7 @@ public class RedisCache {
 		poolConfig.setNumTestsPerEvictionRun(3);
 		poolConfig.setBlockWhenExhausted(true);
 		instance = new JedisPool(poolConfig, "redis58119northeurope.redis.cache.windows.net", REDIS_PORT, REDIS_TIMEOUT,
-				"o0xPLZgSREPBdkaUloAT6JGiTBzrQnGl7AzCaNukvaQ=", Redis_USE_TLS);
+				"YpGinWmPmVkxoKWRHLtW8F2DP8fWFUdIEAzCaOHNoq8=", Redis_USE_TLS);
 		return instance;
 	}
 }

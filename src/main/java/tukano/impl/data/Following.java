@@ -9,22 +9,28 @@ import jakarta.persistence.Id;
 public class Following {
 
 	@Id
-	String id;
-
+	private String id;
 	@Id
-	String follower;
-
+	private String follower;
 	@Id
-	String followee;
+	private String followee;
 
 	Following() {
 	}
 
 	public Following(String follower, String followee) {
-		super();
+		// super();
 		this.id = follower + "-" + followee;
 		this.follower = follower;
 		this.followee = followee;
+	}
+
+	public String getId() {
+		return id;
+	}
+
+	public void setId(String id) {
+		this.id = id;
 	}
 
 	public String getFollower() {

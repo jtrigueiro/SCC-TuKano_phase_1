@@ -3,6 +3,7 @@ package tukano.impl.storage;
 import java.util.List;
 import java.util.function.Supplier;
 
+import java.util.logging.Logger;
 import com.azure.cosmos.ConsistencyLevel;
 import com.azure.cosmos.CosmosClient;
 import com.azure.cosmos.CosmosClientBuilder;
@@ -15,9 +16,11 @@ import com.azure.cosmos.models.PartitionKey;
 
 import tukano.api.Result;
 import tukano.api.Result.ErrorCode;
+import tukano.impl.JavaShorts;
 import utils.AzureKeys;
 import utils.AzureProperties;
 
+import static java.lang.String.format;
 import static tukano.api.Result.ErrorCode;
 
 public class CosmosDBLayer {
@@ -26,13 +29,17 @@ public class CosmosDBLayer {
 
 	private String containerName;
 
+	private static Logger Log = Logger.getLogger(JavaShorts.class.getName());
+
 	public static synchronized CosmosDBLayer getInstance(String containerName) {
-		if (instance != null && instance.containerName.equals(containerName))
+		if (instance != null && instance.containerName.equals(containerName)) {
+			Log.info(() -> format("Istance Container Name : containerName = %s\n", containerName));
 			return instance;
+		}
 
 		CosmosClient client = new CosmosClientBuilder()
 				.endpoint("https://cosmos58119.documents.azure.com:443/")
-				.key("gidwoYersOou4743IgukiCj6Ty0UnVNB21edVBTWZbOc78f68ma4526HspN21HWTjpdl8juYWjsbACDbtp3EJA==")
+				.key("iY14W9AK0DiPbZv8hmlCxDaxcpEcvvn7OdClDx1vZCfgkSeQF9jFNrN7y5nBhlR9WU0IgUnB7mA3ACDbo3tj8g==")
 				// .directMode()
 				.gatewayMode() // replace by .directMode() for better performance
 				.consistencyLevel(ConsistencyLevel.SESSION)
@@ -40,6 +47,7 @@ public class CosmosDBLayer {
 				.contentResponseOnWriteEnabled(true) // On write, return the object written
 				.buildClient();
 		instance = new CosmosDBLayer(client, containerName);
+		Log.info(() -> format("New Istance Container Name : containerName = %s\n", containerName));
 		return instance;
 
 	}
@@ -99,7 +107,7 @@ public class CosmosDBLayer {
 			init();
 			return Result.ok(supplierFunc.get());
 		} catch (CosmosException ce) {
-			// ce.printStackTrace();
+			ce.printStackTrace();
 			return Result.error(errorCodeFromStatus(ce.getStatusCode()));
 		} catch (Exception x) {
 			x.printStackTrace();
