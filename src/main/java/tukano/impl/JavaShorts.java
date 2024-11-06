@@ -71,7 +71,7 @@ public class JavaShorts implements Shorts {
 		}
 		CosmosDBLayer dblikes = CosmosDBLayer.getInstance(Shorts.LIKES);
 
-		var query = format("SELECT count(1) FROM Likes l WHERE l.shortId = '%s'", shortId);
+		var query = format("SELECT VALUE count(1) FROM Likes l WHERE l.shortId = '%s'", shortId);
 		var likes = dblikes.query(query, Long.class).value();
 
 		CosmosDBLayer dbshorts = CosmosDBLayer.getInstance(Shorts.NAME);
@@ -91,11 +91,8 @@ public class JavaShorts implements Shorts {
 	@Override
 	public Result<Void> deleteShort(String shortId, String password) {
 		Log.info(() -> format("deleteShort : shortId = %s, pwd = %s\n", shortId, password));
-
 		return errorOrResult(getShort(shortId), shrt -> {
-
 			return errorOrResult(okUser(shrt.getOwnerId(), password), user -> {
-
 				CosmosDBLayer dbshorts = CosmosDBLayer.getInstance(Shorts.NAME);
 
 				try (Jedis jedis = RedisCache.getCachePool().getResource()) {
@@ -103,13 +100,13 @@ public class JavaShorts implements Shorts {
 				}
 
 				dbshorts.deleteOne(shrt);
-
 				CosmosDBLayer dblikes = CosmosDBLayer.getInstance(Shorts.LIKES);
 
 				var query = format("SELECT Likes l WHERE l.shortId = '%s'", shortId);
 				dblikes.deleteMany(query, Likes.class);
-
-				JavaBlobs.getInstance().delete(shrt.getBlobUrl(), Token.get());
+				Log.info(() -> format("URL : BLOBURL = %s\n", shrt.getBlobUrl()));
+				var a = JavaBlobs.getInstance().delete(shrt.getBlobUrl(), Token.get());
+				Log.info(() -> format("ERRO : ERRODELETE = %s\n", a.error()));
 				return Result.ok();
 			});
 		});
@@ -171,20 +168,25 @@ public class JavaShorts implements Shorts {
 		});
 	}
 
-	@Override
 	public Result<List<String>> getFeed(String userId, String password) {
 		Log.info(() -> format("getFeed : userId = %s, pwd = %s\n", userId, password));
 
-		final var QUERY_FMT = """
-				SELECT s.id, s.timestamp FROM Short s WHERE	s.ownerId = '%s'
-				UNION
-				SELECT s.id, s.timestamp FROM Short s, Following f
-					WHERE
-						f.followee = s.ownerId AND f.follower = '%s'
-				ORDER BY s.timestamp DESC""";
+		final var QUERY_FIRST = "SELECT VALUE f.followee FROM Following f WHERE f.follower = '%s'";
 
-		return errorOrValue(okUser(userId, password),
-				CosmosDBLayer.getInstance(Shorts.NAME).query(format(QUERY_FMT, userId, userId), String.class));
+		return errorOrValue(okUser(userId, password), user -> {
+
+			var followees = CosmosDBLayer.getInstance(Shorts.FOLLOWING).query(format(QUERY_FIRST, userId), String.class)
+					.value();
+			followees.add(userId);
+
+			var shorts = CosmosDBLayer.getInstance(Shorts.NAME)
+					.query(format("SELECT VALUE s.id FROM Short s WHERE s.ownerId IN (%s) ORDER BY s.timestamp DESC",
+							String.join(",", followees.stream().map(f -> "'" + f + "'").toArray(String[]::new))),
+							String.class)
+					.value();
+
+			return shorts;
+		});
 	}
 
 	protected Result<User> okUser(String userId, String pwd) {

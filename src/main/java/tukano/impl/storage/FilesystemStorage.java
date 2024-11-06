@@ -31,7 +31,7 @@ public class FilesystemStorage implements BlobStorage {
 			// Get container client
 			containerClient = new BlobContainerClientBuilder()
 					.connectionString(
-							"DefaultEndpointsProtocol=https;AccountName=sto58119northeurope;AccountKey=WLRRPZLh5OFWCQaVEltOwNVsK6RM0728ICcefze6mISbpTvdgrRBOdOqCeJWsO+pYcAmuu+Ij4cM+AStS1y9+A==;EndpointSuffix=core.windows.net")
+							"DefaultEndpointsProtocol=https;AccountName=sto5811956837northeurope;AccountKey=EIBHyVGN5RN+9feYthEtMaKPukVqnLByb1lPWn8tCoKKfP4WYN4HoGj+KMDzxpjO61GNRHgyi463+AStHxJhDg==;EndpointSuffix=core.windows.net")
 					.containerName(BLOBS_CONTAINER_NAME)
 					.buildClient();
 		} catch (Exception e) {

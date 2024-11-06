@@ -54,7 +54,7 @@ public class AzureManagement {
 	static final boolean CREATE_FUNCTIONS = false;
 
 	// TODO: change your suffix and other names if you want
-	static final String MY_ID = "58119"; // Add your suffix here
+	static final String MY_ID = "5811956837"; // Add your suffix here
 
 	static final String AZURE_COSMOSDB_NAME = "cosmos" + MY_ID; // Cosmos DB account name
 	static final String AZURE_COSMOSDB_DATABASE = "cosmosdb" + MY_ID; // Cosmos DB database name

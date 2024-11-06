@@ -38,8 +38,8 @@ public class CosmosDBLayer {
 		}
 
 		CosmosClient client = new CosmosClientBuilder()
-				.endpoint("https://cosmos58119.documents.azure.com:443/")
-				.key("iY14W9AK0DiPbZv8hmlCxDaxcpEcvvn7OdClDx1vZCfgkSeQF9jFNrN7y5nBhlR9WU0IgUnB7mA3ACDbo3tj8g==")
+				.endpoint("https://cosmos5811956837.documents.azure.com:443/")
+				.key("5NIrxTXP2QOAEYIEFKMQUshBBBM17VVGTtp5FJfnk9CiNOZmlA09ULHt56LHmAc4wztlSWfT3KReACDbl5iOhA==")
 				// .directMode()
 				.gatewayMode() // replace by .directMode() for better performance
 				.consistencyLevel(ConsistencyLevel.SESSION)
@@ -64,7 +64,7 @@ public class CosmosDBLayer {
 	private synchronized void init() {
 		if (db != null)
 			return;
-		db = client.getDatabase("cosmosdb58119");
+		db = client.getDatabase("cosmosdb5811956837");
 		container = db.getContainer(containerName);
 	}
 
