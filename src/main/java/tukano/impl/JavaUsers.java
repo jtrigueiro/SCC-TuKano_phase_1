@@ -18,6 +18,7 @@ import tukano.api.User;
 import tukano.api.Users;
 import tukano.impl.cache.RedisCache;
 import tukano.impl.storage.CosmosDBLayer;
+import utils.AzureProperties;
 import utils.JSON;
 
 public class JavaUsers implements Users {
@@ -45,7 +46,7 @@ public class JavaUsers implements Users {
 		var result = errorOrValue(CosmosDBLayer.getInstance(Users.NAME).insertOne(user),
 				user.getId());
 
-		if (result.isOK())
+		if (AzureProperties.USE_REDIS && result.isOK())
 			try (Jedis jedis = RedisCache.getCachePool().getResource()) {
 				jedis.set(Users.NAME + ':' + user.getId(), JSON.encode(user));
 			}
@@ -59,18 +60,23 @@ public class JavaUsers implements Users {
 		if (userId == null)
 			return error(BAD_REQUEST);
 
-		try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-			var cached = jedis.get(Users.NAME + ':' + userId);
-			if (cached != null)
-				return validatedUserOrError(Result.ok(JSON.decode(cached, User.class)), pwd);
-
-			var result = validatedUserOrError(CosmosDBLayer.getInstance(Users.NAME).getOne(userId, User.class), pwd);
-
-			if (result.isOK())
-				jedis.set(Users.NAME + ':' + userId, JSON.encode(result.value()));
-
-			return result;
+		if(AzureProperties.USE_REDIS) {
+			try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+				var cached = jedis.get(Users.NAME + ':' + userId);
+				if (cached != null)
+					return validatedUserOrError(Result.ok(JSON.decode(cached, User.class)), pwd);
+			}
 		}
+		
+		var result = validatedUserOrError(CosmosDBLayer.getInstance(Users.NAME).getOne(userId, User.class), pwd);
+
+		if (AzureProperties.USE_REDIS && result.isOK()) {
+			try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+				jedis.set(Users.NAME + ':' + userId, JSON.encode(result.value()));
+			}
+		}
+
+		return result;
 	}
 
 	@Override
@@ -81,26 +87,35 @@ public class JavaUsers implements Users {
 			return error(BAD_REQUEST);
 
 		CosmosDBLayer db = CosmosDBLayer.getInstance(Users.NAME);
+		Result<User> rUser = null;
 
-		try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-			var cached = jedis.get(Users.NAME + ':' + userId);
-			Result<User> rUser;
+		if(AzureProperties.USE_REDIS) {
+			try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+				var cached = jedis.get(Users.NAME + ':' + userId);
 
-			if (cached != null)
-				rUser = Result.ok(JSON.decode(cached, User.class));
-			else
+				if (cached != null)
+					rUser = Result.ok(JSON.decode(cached, User.class));
+			}
+		}
+			
+		if(rUser == null)
+			rUser = db.getOne(userId, User.class);
+
+		if (validatedUserOrError(rUser, pwd).isOK()) {
+			User user = rUser.value().updateFrom(other);
+
+			if (db.updateOne(user.updateFrom(user)).isOK()) {
 				rUser = db.getOne(userId, User.class);
 
-			if (validatedUserOrError(rUser, pwd).isOK()) {
-				User user = rUser.value().updateFrom(other);
-				if (db.updateOne(user.updateFrom(user)).isOK()) {
-					rUser = db.getOne(userId, User.class);
-					if (rUser.isOK())
+				if (rUser.isOK() && AzureProperties.USE_REDIS) {
+					try (Jedis jedis = RedisCache.getCachePool().getResource()) {
 						jedis.set(Users.NAME + ':' + userId, JSON.encode(rUser.value()));
+					}
 				}
 			}
-			return rUser;
 		}
+
+		return rUser;
 	}
 
 	@Override
@@ -110,27 +125,38 @@ public class JavaUsers implements Users {
 		if (userId == null || pwd == null)
 			return error(BAD_REQUEST);
 
-		try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-			var cached = jedis.get(Users.NAME + ':' + userId);
-			Result<User> rUser;
+		Result<User> rUser = null;
 
-			if (cached != null)
-				rUser = Result.ok(JSON.decode(cached, User.class));
-			else
-				rUser = CosmosDBLayer.getInstance(Users.NAME).getOne(userId, User.class);
+		if(AzureProperties.USE_REDIS) {
+			try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+				var cached = jedis.get(Users.NAME + ':' + userId);
 
-			return errorOrResult(validatedUserOrError(rUser, pwd), user -> {
-
-				// Delete user shorts and related info asynchronously in a separate thread
-				Executors.defaultThreadFactory().newThread(() -> {
-					JavaShorts.getInstance().deleteAllShorts(userId, pwd, Token.get(userId));
-					JavaBlobs.getInstance().deleteAllBlobs(userId, Token.get(userId));
-				}).start();
-
-				CosmosDBLayer.getInstance(Users.NAME).deleteOne(user);
-				return Result.ok(user);
-			});
+				if (cached != null)
+					rUser = Result.ok(JSON.decode(cached, User.class));
+			}
 		}
+
+		if(rUser == null)
+			rUser = CosmosDBLayer.getInstance(Users.NAME).getOne(userId, User.class);
+		
+		return errorOrResult(validatedUserOrError(rUser, pwd), user -> {
+
+			// Delete user shorts and related info asynchronously in a separate thread
+			Executors.defaultThreadFactory().newThread(() -> {
+				JavaShorts.getInstance().deleteAllShorts(userId, pwd, Token.get(userId));
+				JavaBlobs.getInstance().deleteAllBlobs(userId, Token.get(userId));
+			}).start();
+
+			CosmosDBLayer.getInstance(Users.NAME).deleteOne(user);
+
+			if (AzureProperties.USE_REDIS) {
+				try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+					jedis.del(Users.NAME + ':' + userId);
+				}
+			}
+
+			return Result.ok(user);
+		});
 	}
 
 	@Override

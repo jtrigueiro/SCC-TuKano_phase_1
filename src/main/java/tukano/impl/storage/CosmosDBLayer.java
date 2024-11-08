@@ -25,6 +25,8 @@ import static tukano.api.Result.ErrorCode;
 
 public class CosmosDBLayer {
 
+	private static final boolean USE_POSTGRES = false;
+
 	private static CosmosDBLayer instance;
 
 	private String containerName;

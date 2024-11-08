@@ -23,6 +23,7 @@ import tukano.impl.data.Following;
 import tukano.impl.data.Likes;
 import tukano.impl.rest.TukanoRestServer;
 import tukano.impl.storage.CosmosDBLayer;
+import utils.AzureProperties;
 import utils.JSON;
 
 public class JavaShorts implements Shorts {
@@ -63,12 +64,15 @@ public class JavaShorts implements Shorts {
 		if (shortId == null)
 			return error(BAD_REQUEST);
 
-		try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-			var cached = jedis.get(Shorts.NAME + ':' + shortId);
+		if(AzureProperties.USE_REDIS) {
+			try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+				var cached = jedis.get(Shorts.NAME + ':' + shortId);
 
-			if (cached != null)
-				return Result.ok(JSON.decode(cached, Short.class));
+				if (cached != null)
+					return Result.ok(JSON.decode(cached, Short.class));
+			}
 		}
+
 		CosmosDBLayer dblikes = CosmosDBLayer.getInstance(Shorts.LIKES);
 
 		var query = format("SELECT VALUE count(1) FROM Likes l WHERE l.shortId = '%s'", shortId);
@@ -78,25 +82,27 @@ public class JavaShorts implements Shorts {
 		var result = errorOrValue(dbshorts.getOne(shortId, Short.class),
 				shrt -> shrt.copyWithLikes_And_Token(likes.get(0)));
 
-		if (result.isOK()) {
+		if (result.isOK() && AzureProperties.USE_REDIS) {
 			try (Jedis jedis = RedisCache.getCachePool().getResource()) {
 				jedis.set(Shorts.NAME + ':' + shortId, JSON.encode(result.value()));
 			}
 		}
 
 		return result;
-
 	}
 
 	@Override
 	public Result<Void> deleteShort(String shortId, String password) {
 		Log.info(() -> format("deleteShort : shortId = %s, pwd = %s\n", shortId, password));
+
 		return errorOrResult(getShort(shortId), shrt -> {
 			return errorOrResult(okUser(shrt.getOwnerId(), password), user -> {
 				CosmosDBLayer dbshorts = CosmosDBLayer.getInstance(Shorts.NAME);
 
-				try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-					jedis.del(Shorts.NAME + ':' + shortId);
+				if (AzureProperties.USE_REDIS) {
+					try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+						jedis.del(Shorts.NAME + ':' + shortId);
+					}	
 				}
 
 				dbshorts.deleteOne(shrt);
@@ -212,9 +218,13 @@ public class JavaShorts implements Shorts {
 		CosmosDBLayer dbshorts = CosmosDBLayer.getInstance(Shorts.NAME);
 		var query1 = format("SELECT Short s WHERE s.ownerId = '%s'", userId);
 		var shorts = dbshorts.query(query1, Short.class).value();
-		try (Jedis jedis = RedisCache.getCachePool().getResource()) {
-			shorts.forEach(shrt -> jedis.del(Shorts.NAME + ':' + shrt.getId()));
+
+		if (AzureProperties.USE_REDIS) {
+			try (Jedis jedis = RedisCache.getCachePool().getResource()) {
+				shorts.forEach(shrt -> jedis.del(Shorts.NAME + ':' + shrt.getId()));
+			}
 		}
+		
 		dbshorts.deleteMany(query1, Short.class);
 
 		// delete follows
